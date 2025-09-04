@@ -1,0 +1,82 @@
+# Docker Compose file for SK Project
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: sk-project-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sk_project
+      MYSQL_USER: sk_user
+      MYSQL_PASSWORD: sk_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/sk_project.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - sk-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sk_user", "-psk_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sk-project-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://sk_user:sk_password@mysql:3306/sk_project
+      - DB_HOST=mysql
+      - DB_USER=sk_user
+      - DB_PASSWORD=sk_password
+      - DB_NAME=sk_project
+      - DB_PORT=3306
+      - GMAIL_USER=kenruss0617@gmail.com
+      - GMAIL_APP_PASSWORD=vcswxesuaqzfeqvr
+      - SMTP_USER=kenruss0617@gmail.com
+      - SMTP_PASS=vcswxesuaqzfeqvr
+      - NEXT_TELEMETRY_DISABLED=1
+    ports:
+      - "3001:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - sk-network
+    volumes:
+      - ./public/uploads:/app/public/uploads
+
+  # phpMyAdmin for database management (optional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: sk-project-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: sk_user
+      PMA_PASSWORD: sk_password
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - sk-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  sk-network:
+    driver: bridge

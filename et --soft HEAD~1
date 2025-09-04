@@ -1,0 +1,24 @@
+[33mcommit 8749705adebbe27e38a57141f03f698e3eb974d6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: russelescultura <kenruss0617@gmail.com>
+Date:   Thu Sep 4 02:05:56 2025 +0800
+
+    feat: Add complete Docker support with multi-container setup
+    
+    - Add Dockerfile with Node.js 18-slim for better OpenSSL compatibility
+    - Add docker-compose.yml with MySQL, phpMyAdmin, and app services
+    - Configure database connection with environment variables
+    - Add comprehensive Docker documentation
+    - Fix TypeScript/ESLint build issues for containerization
+    - Add health check API endpoint
+    - Update README with Docker quick start guide
+    - Include .dockerignore for optimized builds
+
+.dockerignore
+DOCKER_SETUP.md
+Dockerfile
+README.md
+docker-compose.yml
+env.example
+next.config.js
+src/app/api/health/route.ts
+src/lib/db.ts
