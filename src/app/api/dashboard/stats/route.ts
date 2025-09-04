@@ -11,6 +11,19 @@ type RecentActivity = {
 }
 
 export async function GET() {
+  // Return mock data during build time to prevent database connection issues
+  if (process.env.NODE_ENV === 'production' && !process.env.RUNTIME) {
+    return NextResponse.json({
+      totalPrograms: 0,
+      totalEvents: 0,
+      totalSubmissions: 0,
+      totalYouthProfiles: 0,
+      totalContentPosts: 0,
+      totalBudget: 0,
+      recentActivities: []
+    })
+  }
+
   try {
     console.log('Starting dashboard stats fetch...')
     

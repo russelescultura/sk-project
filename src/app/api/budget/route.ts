@@ -3,7 +3,16 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-	try {
+  // Return mock data during build time
+  if (process.env.NODE_ENV === 'production' && !process.env.RUNTIME) {
+    return NextResponse.json({
+      totalRevenue: 0,
+      totalExpenses: 0,
+      recentTransactions: []
+    })
+  }
+
+  try {
 		const [programs, revenueAgg] = await Promise.all([
 			prisma.program.findMany({
 				orderBy: { createdAt: 'desc' },

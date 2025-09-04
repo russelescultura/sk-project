@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -35,10 +36,33 @@ export async function GET(request: NextRequest) {
 			]
 		}
 
-		const members = await prisma.sKMember.findMany({
-			where,
-			orderBy: { createdAt: 'desc' }
-		})
+		let members: any[] = []
+		try {
+			await prisma.$connect()
+			members = await prisma.sKMember.findMany({
+				where,
+				orderBy: { createdAt: 'desc' }
+			})
+		} catch (dbErr) {
+			console.error('SK members DB error:', dbErr)
+			// Fallback to common local root DSN so local homepage can show REAL DB data
+			try {
+				const localPrisma = new PrismaClient({
+					datasources: { db: { url: 'mysql://root:@localhost:3306/sk_project' } },
+				})
+				await localPrisma.$connect()
+				members = await localPrisma.sKMember.findMany({
+					where,
+					orderBy: { createdAt: 'desc' }
+				})
+				await localPrisma.$disconnect()
+			} catch (fallbackErr) {
+				console.error('SK members fallback DB error:', fallbackErr)
+				return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+			}
+		} finally {
+			try { await prisma.$disconnect() } catch {}
+		}
 
 		// Transform to match the expected interface
 		const normalized = members.map((m) => ({
@@ -51,7 +75,7 @@ export async function GET(request: NextRequest) {
 			department: m.department,
 			position: m.position,
 			location: m.location,
-			skills: m.skills ? JSON.parse(m.skills) : [],
+			skills: (() => { try { return m.skills ? JSON.parse(m.skills) : [] } catch { return [] } })(),
 			profileImage: m.profileImage || undefined,
 			performance: m.performance ? Number(m.performance) : 0,
 			projects: m.projects ? Number(m.projects) : 0,

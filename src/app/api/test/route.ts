@@ -2,6 +2,15 @@ import { PrismaClient } from '@prisma/client'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  // Skip database during build
+  if (process.env.NODE_ENV === 'production' && !process.env.RUNTIME) {
+    return NextResponse.json({ 
+      status: 'ok', 
+      message: 'Build-time response',
+      timestamp: new Date().toISOString() 
+    })
+  }
+
   try {
     console.log('Testing database connection...')
     console.log('Environment variables:')
